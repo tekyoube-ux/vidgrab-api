@@ -121,8 +121,11 @@ app.get('/api/stream', async (req, res) => {
         const response = await fetch(videoUrl);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
+        const allowedHeaders = ['content-type', 'content-length', 'accept-ranges', 'x-content-length'];
         response.headers.forEach((value, name) => {
-            res.setHeader(name, value);
+            if (allowedHeaders.includes(name.toLowerCase())) {
+                res.setHeader(name.toLowerCase() === 'x-content-length' ? 'content-length' : name, value);
+            }
         });
 
         res.setHeader('Content-Disposition', 'attachment; filename="vidgrab_video.mp4"');
