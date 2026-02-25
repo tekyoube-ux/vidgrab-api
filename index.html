@@ -800,8 +800,10 @@
             document.getElementById('result-area').innerHTML = html;
         }
 
-        // API URL will be changed to Render URL upon deployment
-        const BACKEND_URL = 'http://localhost:3000/api/download';
+        // Dinamik API rotasi: Hem lokalde hem de Canli (Render+Cloudflare) ortamda calismasi icin.
+        const BACKEND_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? 'http://localhost:3000/api/download'
+            : 'https://vidgrab-server-tyre.onrender.com/api/download';
 
         async function handleDownload() {
             const urlVal = document.getElementById('url-input').value.trim();
