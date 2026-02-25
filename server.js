@@ -36,7 +36,16 @@ app.post('/api/download', async (req, res) => {
         const ytdlpBinary = isWin ? 'yt-dlp.exe' : 'yt-dlp';
         const ytdlpPath = path.resolve(__dirname, 'node_modules', 'youtube-dl-exec', 'bin', ytdlpBinary);
 
-        const args = [url, '--dump-single-json', '--no-check-certificates', '--no-warnings', '--prefer-free-formats', '--add-header', 'referer:youtube.com', '--add-header', 'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'];
+        const args = [
+            url,
+            '--dump-single-json',
+            '--no-check-certificates',
+            '--no-warnings',
+            '--prefer-free-formats',
+            '--extractor-args', 'youtube:player_client=android,web',
+            '--add-header', 'referer:youtube.com',
+            '--add-header', 'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        ];
 
         if (audioOnly) {
             args.push('--extract-audio');
