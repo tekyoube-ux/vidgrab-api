@@ -94,7 +94,7 @@ app.post('/api/download', async (req, res) => {
         console.error('Download Error:', error.message);
         return res.status(500).json({
             status: 'error',
-            error: { code: 'Video işlenemedi veya desteklenmeyen bir platform.' }
+            error: { code: 'Hata: ' + error.message }
         });
     }
 });
