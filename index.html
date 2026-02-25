@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VidGrab – Video İndirici</title>
+    <meta name="description"
+        content="Instagram, TikTok, YouTube Shorts ve daha fazlasından video indirin. Ücretsiz, hızlı ve güvenli." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #080b14;
+            --surface: #0e1220;
+            --card: #131828;
+            --border: rgba(255, 255, 255, 0.07);
+            --accent1: #7c3aed;
+            --accent2: #06b6d4;
+            --accent3: #f43f5e;
+            --text: #e2e8f0;
+            --muted: #64748b;
+            --radius: 18px;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Animated BG ── */
+        .bg-orbs {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.18;
+            animation: drift 18s ease-in-out infinite alternate;
+        }
+
+        .orb1 {
+            width: 600px;
+            height: 600px;
+            background: var(--accent1);
+            top: -200px;
+            left: -150px;
+            animation-duration: 20s;
+        }
+
+        .orb2 {
+            width: 500px;
+            height: 500px;
+            background: var(--accent2);
+            bottom: -200px;
+            right: -100px;
+            animation-duration: 15s;
+            animation-delay: -5s;
+        }
+
+        .orb3 {
+            width: 350px;
+            height: 350px;
+            background: var(--accent3);
+            top: 40%;
+            left: 40%;
+            animation-duration: 25s;
+            animation-delay: -10s;
+        }
+
+        @keyframes drift {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            100% {
+                transform: translate(60px, 40px) scale(1.1);
+            }
+        }
+
+        /* ── Layout ── */
+        .wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* ── Header ── */
+        header {
+            text-align: center;
+            padding: 70px 20px 10px;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent1), var(--accent2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.5);
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 30px rgba(124, 58, 237, 0.5);
+            }
+
+            50% {
+                box-shadow: 0 0 50px rgba(6, 182, 212, 0.6);
+            }
+        }
+
+        .logo-text {
+            background: linear-gradient(135deg, #a78bfa, #67e8f9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-title {
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            font-weight: 800;
+            line-height: 1.15;
+            margin: 36px 0 14px;
+            letter-spacing: -1px;
+        }
+
+        .hero-title span {
+            background: linear-gradient(135deg, #a78bfa 0%, #67e8f9 50%, #fb7185 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-sub {
+            font-size: 1.05rem;
+            color: var(--muted);
+            max-width: 500px;
+            margin: 0 auto 48px;
+            line-height: 1.7;
+        }
+
+        /* ── Supported Platforms chips ── */
+        .platforms {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 48px;
+        }
+
+        .chip {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 7px 16px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            transition: all 0.25s;
+        }
+
+        .chip:hover {
+            border-color: rgba(255, 255, 255, 0.18);
+            transform: translateY(-2px);
+        }
+
+        .chip-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* ── Input Card ── */
+        .input-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            transition: border-color 0.3s;
+        }
+
+        .input-card:focus-within {
+            border-color: rgba(124, 58, 237, 0.5);
+        }
+
+        .url-row {
+            display: flex;
+            gap: 12px;
+            align-items: stretch;
+        }
+
+        .url-input {
+            flex: 1;
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-size: 0.97rem;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.25s, box-shadow 0.25s;
+        }
+
+        .url-input::placeholder {
+            color: var(--muted);
+        }
+
+        .url-input:focus {
+            border-color: var(--accent1);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+        }
+
+        .btn-download {
+            background: linear-gradient(135deg, var(--accent1), var(--accent2));
+            border: none;
+            border-radius: 12px;
+            padding: 14px 26px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.25s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-download::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0);
+            transition: background 0.2s;
+        }
+
+        .btn-download:hover::after {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(124, 58, 237, 0.4);
+        }
+
+        .btn-download:active {
+            transform: none;
+        }
+
+        .btn-download:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* options row */
+        .options-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-top: 18px;
+            align-items: center;
+        }
+
+        .opt-label {
+            font-size: 0.82rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .opt-select {
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: 9px;
+            padding: 7px 12px;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .opt-select:focus {
+            border-color: var(--accent1);
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .toggle-label {
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        .toggle {
+            width: 42px;
+            height: 24px;
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: 999px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.25s;
+        }
+
+        .toggle.on {
+            background: linear-gradient(135deg, var(--accent1), var(--accent2));
+            border-color: transparent;
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: white;
+            transition: transform 0.25s;
+        }
+
+        .toggle.on::after {
+            transform: translateX(18px);
+        }
+
+        /* ── Status / Result ── */
+        #result-area {
+            margin-top: 28px;
+        }
+
+        .status-box {
+            border-radius: 14px;
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 0.93rem;
+            font-weight: 500;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        .status-loading {
+            background: rgba(124, 58, 237, 0.1);
+            border: 1px solid rgba(124, 58, 237, 0.25);
+        }
+
+        .status-error {
+            background: rgba(244, 63, 94, 0.1);
+            border: 1px solid rgba(244, 63, 94, 0.3);
+            color: #fb7185;
+        }
+
+        .spinner {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 3px solid rgba(124, 58, 237, 0.3);
+            border-top-color: var(--accent1);
+            animation: spin 0.7s linear infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* download result card */
+        .result-card {
+            background: var(--card);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            border-radius: 16px;
+            overflow: hidden;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .result-header {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(6, 182, 212, 0.1));
+            padding: 16px 22px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 700;
+            font-size: 0.97rem;
+        }
+
+        .result-body {
+            padding: 20px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .dl-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 18px;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--text);
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.22s;
+        }
+
+        .dl-btn:hover {
+            border-color: var(--accent2);
+            background: rgba(6, 182, 212, 0.07);
+            transform: translateX(4px);
+        }
+
+        .dl-btn-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dl-btn-icon {
+            font-size: 1.2rem;
+        }
+
+        .dl-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 999px;
+            background: rgba(124, 58, 237, 0.2);
+            color: #a78bfa;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        .dl-arrow {
+            color: var(--muted);
+            font-size: 1rem;
+        }
+
+        /* picker grid */
+        .picker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+        }
+
+        .picker-item {
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            text-decoration: none;
+            color: var(--text);
+            transition: all 0.22s;
+            background: var(--surface);
+        }
+
+        .picker-item:hover {
+            border-color: var(--accent2);
+            transform: translateY(-3px);
+        }
+
+        .picker-thumb {
+            width: 100%;
+            aspect-ratio: 9/16;
+            object-fit: cover;
+            display: block;
+            background: #1e2337;
+        }
+
+        .picker-label {
+            padding: 8px 10px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* ── How it works ── */
+        .section {
+            margin: 80px 0;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 40px;
+            letter-spacing: -0.5px;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .step-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px 22px;
+            text-align: center;
+            transition: transform 0.25s, border-color 0.25s;
+        }
+
+        .step-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.14);
+        }
+
+        .step-num {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, var(--accent1), var(--accent2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: 900;
+        }
+
+        .step-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .step-card p {
+            font-size: 0.85rem;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        /* ── Footer ── */
+        footer {
+            text-align: center;
+            padding: 50px 20px 40px;
+            color: var(--muted);
+            font-size: 0.82rem;
+            border-top: 1px solid var(--border);
+        }
+
+        footer a {
+            color: #a78bfa;
+            text-decoration: none;
+        }
+
+        @media (max-width: 540px) {
+            .url-row {
+                flex-direction: column;
+            }
+
+            .btn-download {
+                width: 100%;
+            }
+
+            .toggle-row {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="bg-orbs">
+        <div class="orb orb1"></div>
+        <div class="orb orb2"></div>
+        <div class="orb orb3"></div>
+    </div>
+
+    <div class="wrap">
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <div class="logo-icon">⬇</div>
+                <span class="logo-text">VidGrab</span>
+            </div>
+            <h1 class="hero-title">
+                Her platformdan<br><span>video indir</span>
+            </h1>
+            <p class="hero-sub">
+                Instagram, TikTok, YouTube Shorts ve daha fazlasından<br>
+                anında, ücretsiz ve kayıpsız kalitede indir.
+            </p>
+        </header>
+
+        <!-- Platform chips -->
+        <div class="platforms" id="platforms">
+            <div class="chip">
+                <div class="chip-dot" style="background:#e1306c"></div>
+                <span>Instagram</span>
+            </div>
+            <div class="chip">
+                <div class="chip-dot" style="background:#ff0050"></div>
+                <span>TikTok</span>
+            </div>
+            <div class="chip">
+                <div class="chip-dot" style="background:#ff0000"></div>
+                <span>YouTube</span>
+            </div>
+            <div class="chip">
+                <div class="chip-dot" style="background:#1da1f2"></div>
+                <span>Twitter / X</span>
+            </div>
+            <div class="chip">
+                <div class="chip-dot" style="background:#7289da"></div>
+                <span>Reddit</span>
+            </div>
+            <div class="chip">
+                <div class="chip-dot" style="background:#25d366"></div>
+                <span>Pinterest</span>
+            </div>
+            <div class="chip">
+                <div class="chip-dot" style="background:#ff5700"></div>
+                <span>SoundCloud</span>
+            </div>
+            <div class="chip">
+                <div class="chip-dot" style="background:#fc0"></div>
+                <span>Snapchat</span>
+            </div>
+            <div class="chip">
+                <div class="chip-dot" style="background:#3b5998"></div>
+                <span>Facebook</span>
+            </div>
+            <div class="chip">
+                <div class="chip-dot" style="background:#00b2ff"></div>
+                <span>Twitch</span>
+            </div>
+        </div>
+
+        <!-- Main Card -->
+        <div class="input-card">
+            <div class="url-row">
+                <input id="url-input" class="url-input" type="url" placeholder="Video linkini buraya yapıştır…"
+                    autocomplete="off" spellcheck="false" />
+                <button class="btn-download" id="dl-btn" onclick="handleDownload()">
+                    ⬇ &nbsp;İndir
+                </button>
+            </div>
+
+            <div class="options-row">
+                <span class="opt-label">Kalite:</span>
+                <select class="opt-select" id="quality">
+                    <option value="max">En Yüksek</option>
+                    <option value="1080">1080p</option>
+                    <option value="720" selected>720p</option>
+                    <option value="480">480p</option>
+                    <option value="360">360p</option>
+                </select>
+
+                <span class="opt-label" style="margin-left:8px">Format:</span>
+                <select class="opt-select" id="format">
+                    <option value="mp4">MP4 (Video+Ses)</option>
+                    <option value="webm">WebM</option>
+                    <option value="mp3">MP3 (Sadece Ses)</option>
+                    <option value="m4a">M4A (Sadece Ses)</option>
+                    <option value="ogg">OGG (Sadece Ses)</option>
+                </select>
+
+                <div class="toggle-row">
+                    <span class="toggle-label">Altyazı:</span>
+                    <div class="toggle" id="sub-toggle" onclick="toggleSub(this)"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result -->
+        <div id="result-area"></div>
+
+        <!-- How it works -->
+        <div class="section">
+            <h2 class="section-title">Nasıl kullanılır?</h2>
+            <div class="steps">
+                <div class="step-card">
+                    <div class="step-num">1</div>
+                    <h3>Linki Kopyala</h3>
+                    <p>İndirmek istediğin video sayfasındaki linki kopyala.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-num">2</div>
+                    <h3>Yapıştır</h3>
+                    <p>Yukarıdaki kutuya linki yapıştır, kalite ve formatı seç.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-num">3</div>
+                    <h3>İndir</h3>
+                    <p>İndir butonuna bas, dosyan anında hazırlanır.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>VidGrab · Altyapı: <a href="https://cobalt.tools" target="_blank">cobalt.tools</a> · Kişisel kullanım
+            içindir.</p>
+        <p style="margin-top:6px">Telif hakkına sahip içerikleri sadece izinli platformlardan indirin.</p>
+    </footer>
+
+    <script>
+        let audioOnly = false;
+
+        function toggleSub(el) {
+            el.classList.toggle('on');
+        }
+
+        function isAudioFormat(fmt) {
+            return ['mp3', 'm4a', 'ogg'].includes(fmt);
+        }
+
+        document.getElementById('format').addEventListener('change', function () {
+            audioOnly = isAudioFormat(this.value);
+        });
+
+        // Allow Enter key
+        document.getElementById('url-input').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') handleDownload();
+        });
+
+        // Auto-paste on focus if clipboard has URL
+        document.getElementById('url-input').addEventListener('focus', async function () {
+            if (this.value) return;
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text.startsWith('http')) this.value = text;
+            } catch (_) { }
+        });
+
+        function setResult(html) {
+            document.getElementById('result-area').innerHTML = html;
+        }
+
+        // API URL will be changed to Render URL upon deployment
+        const BACKEND_URL = 'http://localhost:3000/api/download';
+
+        async function handleDownload() {
+            const urlVal = document.getElementById('url-input').value.trim();
+            if (!urlVal) {
+                document.getElementById('url-input').focus();
+                return;
+            }
+            if (!urlVal.startsWith('http')) {
+                setResult(`<div class="status-box status-error">⚠️ Geçerli bir video linki gir (http... ile başlamalı)</div>`);
+                return;
+            }
+
+            const btn = document.getElementById('dl-btn');
+            btn.disabled = true;
+            btn.textContent = 'İşleniyor…';
+
+            const quality = document.getElementById('quality').value;
+            const format = document.getElementById('format').value;
+            const aOnly = isAudioFormat(format);
+            const aFormat = aOnly ? format : 'mp3';
+            const hasSubs = document.getElementById('sub-toggle').classList.contains('on');
+
+            setResult(`
+      <div class="status-box status-loading">
+        <div class="spinner"></div>
+        <span>Video indiriliyor, bu biraz sürebilir… Lütfen sayfayı kapatma.</span>
+      </div>`);
+
+            const requestBody = {
+                url: urlVal,
+                videoQuality: (quality && quality !== 'max') ? quality : '1080',
+                youtubeVideoCodec: 'h264',
+                audioFormat: aFormat,
+                audioBitrate: '320',
+                downloadMode: aOnly ? 'audio' : 'auto',
+                filenameStyle: 'pretty',
+                disableMetadata: false,
+            };
+
+            const reqHeaders = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+
+            try {
+                const res = await fetch(BACKEND_URL, {
+                    method: 'POST',
+                    headers: reqHeaders,
+                    body: JSON.stringify(requestBody)
+                });
+
+                const data = await res.json();
+
+                if (!res.ok || data?.status === 'error') {
+                    throw new Error(data?.error?.code || 'Sunucu bağlantı hatası.');
+                }
+
+                if (data.status === 'redirect' && data.url) {
+                    renderResult({ status: 'redirect', url: data.url, audio: data.audio }, aOnly);
+                } else {
+                    throw new Error('Geçersiz sunucu yanıtı.');
+                }
+
+            } catch (err) {
+                setResult(`<div class="status-box status-error">❌ Hata: ${err.message}</div>`);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '⬇ &nbsp;İndir';
+            }
+        }
+
+        function renderResult(data, aOnly) {
+            const st = data.status;
+
+            if (st === 'error') {
+                const msg = data.error?.code || JSON.stringify(data.error) || 'Bilinmeyen hata';
+                setResult(`<div class="status-box status-error">❌ ${msg}</div>`);
+                return;
+            }
+
+            if (st === 'stream' || st === 'redirect' || st === 'tunnel') {
+                const icon = aOnly ? '🎵' : '🎬';
+                const tag = aOnly ? 'Ses' : 'Video';
+                setResult(`
+        <div class="result-card">
+          <div class="result-header">${icon} İndirilmeye hazır!</div>
+          <div class="result-body">
+            <a class="dl-btn" href="${data.url}" target="_blank" download>
+              <div class="dl-btn-left">
+                <span class="dl-btn-icon">${icon}</span>
+                <span>${tag} İndir</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span class="dl-badge">${tag}</span>
+                <span class="dl-arrow">↗</span>
+              </div>
+            </a>
+            ${data.audio ? `
+            <a class="dl-btn" href="${data.audio}" target="_blank" download>
+              <div class="dl-btn-left">
+                <span class="dl-btn-icon">🎵</span>
+                <span>Ses İndir</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span class="dl-badge">Ses</span>
+                <span class="dl-arrow">↗</span>
+              </div>
+            </a>` : ''}
+          </div>
+        </div>`);
+                return;
+            }
+
+            if (st === 'picker') {
+                const items = data.picker || [];
+                const thumbs = items.map((item, i) => {
+                    const isVideo = item.type === 'video' || (!item.thumb && item.url);
+                    return `
+          <a class="picker-item" href="${item.url}" target="_blank" download>
+            ${item.thumb
+                            ? `<img class="picker-thumb" src="${item.thumb}" alt="Küçük resim" loading="lazy" />`
+                            : `<div class="picker-thumb" style="display:flex;align-items:center;justify-content:center;font-size:2rem">${isVideo ? '🎬' : '🎵'}</div>`
+                        }
+            <div class="picker-label">
+              <span>${isVideo ? '🎬 Video' : '🎵 Ses'} ${i + 1}</span>
+              <span style="color:var(--accent2);font-size:1rem">↗</span>
+            </div>
+          </a>`;
+                }).join('');
+
+                let audioBtn = '';
+                if (data.audio) {
+                    audioBtn = `
+          <div style="margin-top:8px">
+            <a class="dl-btn" href="${data.audio}" target="_blank" download>
+              <div class="dl-btn-left"><span class="dl-btn-icon">🎵</span><span>Tüm Sesi İndir</span></div>
+              <span class="dl-arrow">↗</span>
+            </a>
+          </div>`;
+                }
+
+                setResult(`
+        <div class="result-card">
+          <div class="result-header">🗂 Birden fazla medya bulundu (${items.length} öğe)</div>
+          <div class="result-body">
+            <div class="picker-grid">${thumbs}</div>
+            ${audioBtn}
+          </div>
+        </div>`);
+                return;
+            }
+
+            setResult(`<div class="status-box status-error">⚠️ Beklenmeyen yanıt: ${JSON.stringify(data)}</div>`);
+        }
+    </script>
+</body>
+
+</html>

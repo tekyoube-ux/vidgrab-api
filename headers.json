@@ -1,0 +1,58 @@
+[
+  [
+    "access-control-allow-headers",
+    "content-type,accept"
+  ],
+  [
+    "access-control-allow-methods",
+    "GET,POST"
+  ],
+  [
+    "access-control-allow-origin",
+    "*"
+  ],
+  [
+    "access-control-expose-headers",
+    "Ratelimit-Limit,Ratelimit-Policy,Ratelimit-Remaining,Ratelimit-Reset"
+  ],
+  [
+    "alt-svc",
+    "h3=\":443\"; ma=86400"
+  ],
+  [
+    "cf-cache-status",
+    "DYNAMIC"
+  ],
+  [
+    "cf-ray",
+    "9d390582298ab658-IST"
+  ],
+  [
+    "connection",
+    "keep-alive"
+  ],
+  [
+    "date",
+    "Wed, 25 Feb 2026 17:46:20 GMT"
+  ],
+  [
+    "nel",
+    "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}"
+  ],
+  [
+    "report-to",
+    "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=ke6LTOurZHc6ssYXP%2FVVPRLQhVjLibbzlsNMSJ9uEIZS40OZLGb3W3QAy0IdHhkm9RguxIzctFSTLocWzXRCliu7oA97qblwuz1MR5Io0Z4%3D\"}]}"
+  ],
+  [
+    "server",
+    "cloudflare"
+  ],
+  [
+    "strict-transport-security",
+    "max-age=31536000; includeSubDomains; preload"
+  ],
+  [
+    "vary",
+    "Access-Control-Request-Headers"
+  ]
+]

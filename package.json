@@ -1,0 +1,19 @@
+{
+    "name": "vidgrab",
+    "version": "1.0.0",
+    "description": "Video indirici",
+    "scripts": {
+        "start": "node server.js",
+        "dev": "wrangler pages dev .",
+        "deploy": "wrangler pages deploy ."
+    },
+    "devDependencies": {
+        "wrangler": "^3.0.0"
+    },
+    "dependencies": {
+        "cors": "^2.8.6",
+        "express": "^5.2.1",
+        "morgan": "^1.10.1",
+        "youtube-dl-exec": "^3.1.2"
+    }
+}
