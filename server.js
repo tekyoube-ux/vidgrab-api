@@ -27,7 +27,7 @@ function getRapidApiPath(url) {
         if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1].split('?')[0];
         else if (url.includes('v=')) videoId = url.split('v=')[1].split('&')[0];
         if (!videoId) return null;
-        return `youtube/v3/video/details?videoId=${videoId}&urlAccess=proxied`;
+        return `youtube/v3/video/details?videoId=${videoId}`;
     }
     return null; // Desteklenmeyen platform
 }
