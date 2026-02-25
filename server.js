@@ -118,28 +118,37 @@ app.get('/api/stream', async (req, res) => {
     if (!videoUrl) return res.status(400).send('No URL provided');
 
     try {
-        const response = await fetch(videoUrl);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const https = require('https');
 
-        const allowedHeaders = ['content-type', 'content-length', 'accept-ranges', 'x-content-length'];
-        response.headers.forEach((value, name) => {
-            if (allowedHeaders.includes(name.toLowerCase())) {
-                res.setHeader(name.toLowerCase() === 'x-content-length' ? 'content-length' : name, value);
+        https.get(videoUrl, (streamRes) => {
+            if (streamRes.statusCode >= 400) {
+                return res.status(streamRes.statusCode).send(`Proxy Error: ${streamRes.statusCode}`);
             }
+
+            const allowedHeaders = ['content-type', 'content-length', 'accept-ranges', 'x-content-length'];
+            for (const name in streamRes.headers) {
+                if (allowedHeaders.includes(name.toLowerCase())) {
+                    res.setHeader(name.toLowerCase() === 'x-content-length' ? 'content-length' : name, streamRes.headers[name]);
+                }
+            }
+
+            res.setHeader('Content-Disposition', 'attachment; filename="vidgrab_video.mp4"');
+            res.setHeader('Access-Control-Allow-Origin', '*');
+
+            streamRes.pipe(res);
+
+            streamRes.on('error', (err) => {
+                console.error('Stream Pipe Error:', err);
+                res.end();
+            });
+        }).on('error', (err) => {
+            console.error('HTTPS Proxy Network Error:', err.message);
+            res.status(500).send('Network Error: ' + err.message);
         });
 
-        res.setHeader('Content-Disposition', 'attachment; filename="vidgrab_video.mp4"');
-        res.setHeader('Access-Control-Allow-Origin', '*');
-
-        if (response.body.pipe) {
-            response.body.pipe(res);
-        } else {
-            const { Readable } = require('stream');
-            Readable.fromWeb(response.body).pipe(res);
-        }
     } catch (e) {
-        console.error('Stream Proxy Hatasi:', e.message);
-        res.status(500).send('Stream Proxy Hatasi: ' + e.message);
+        console.error('Stream Setup Error:', e.message);
+        res.status(500).send('Stream Setup Error: ' + e.message);
     }
 });
 
