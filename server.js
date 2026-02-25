@@ -9,89 +9,106 @@ app.use(express.json());
 app.use(morgan('dev'));
 app.use(express.static(__dirname));
 
-// Render.com'un banlanmış IP adresini kullanmak yerine,
-// Tüm istekleri bu gizli proxy havuzuna dağıtıyoruz.
-const COBALT_INSTANCES = [
-    'https://co.wuk.sh/api/json',
-    'https://cobalt.catto.lat/api/json',
-    'https://api.cobalt.best/api/json',
-    'https://cobalt.canine.tools/api/json',
-    'https://cobalt.meowing.de/api/json',
-    'https://co.anontier.nl/api/json'
-];
+// Kullanicinin Premium RapidAPI Bilgileri
+const RAPIDAPI_KEY = '70e243b92fmsh9a964bc0fd33646p13bb1cjsndedd8a1abde9';
+const RAPIDAPI_HOST = 'social-media-video-downloader.p.rapidapi.com';
+
+// Linkin hangi platforma ait oldugunu anlayip ilgili adrese yonlendirecek sistem.
+function getRapidApiPath(url) {
+    if (url.includes('tiktok.com')) {
+        return `tiktok/v3/post/details?url=${encodeURIComponent(url)}`;
+    } else if (url.includes('instagram.com')) {
+        const match = url.match(/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/);
+        const shortcode = match ? match[1] : null;
+        if (!shortcode) return null;
+        return `instagram/v3/media/post/details?shortcode=${shortcode}`;
+    } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        let videoId = '';
+        if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1].split('?')[0];
+        else if (url.includes('v=')) videoId = url.split('v=')[1].split('&')[0];
+        if (!videoId) return null;
+        return `youtube/v3/video/details?videoId=${videoId}`;
+    }
+    return null; // Desteklenmeyen platform
+}
 
 app.post('/api/download', async (req, res) => {
     const { url, quality, format, audioOnly } = req.body;
 
-    if (!url || (!url.startsWith('http') && !url.startsWith('https'))) {
+    if (!url || !url.startsWith('http')) {
         return res.status(400).json({ status: 'error', error: { code: 'Geçersiz URL' } });
     }
 
-    let cQuality = '1080';
-    if (quality && quality !== 'max') {
-        cQuality = quality.replace('p', '');
-    } else if (quality === 'max') {
-        cQuality = 'max';
-    }
+    try {
+        console.log(`Began processing via Premium RapidAPI: ${url}`);
 
-    const cobaltHeaders = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    };
-
-    const cobaltBody = {
-        url: url,
-        vQuality: cQuality,
-        isAudioOnly: audioOnly || false,
-        aFormat: format === 'mp3' ? 'mp3' : 'best',
-        vCodec: 'h264'
-    };
-
-    let lastError = 'Tüm proxy sunucuları yanıt vermedi.';
-
-    for (const instance of COBALT_INSTANCES) {
-        try {
-            console.log(`📡 Istek Atiliyor -> ${instance}`);
-            const result = await fetch(instance, {
-                method: 'POST',
-                headers: cobaltHeaders,
-                body: JSON.stringify(cobaltBody),
-                signal: AbortSignal.timeout(12000)
-            });
-
-            if (!result.ok) {
-                lastError = `HTTP ${result.status}`;
-                console.log(`❌ Proxy Reddedildi: ${instance} (${lastError})`);
-                continue;
-            }
-
-            const data = await result.json();
-
-            if (data.status === 'error' || data.error) {
-                lastError = data.text || data.error?.code || 'Bilinmeyen ic hata';
-                console.log(`❌ Proxy Icerik Hatasi: ${instance} (${lastError})`);
-                continue;
-            }
-
-            // Basari!
-            console.log(`✅ Basarili: ${instance}`);
-            return res.json({
-                status: 'redirect',
-                url: data.url,
-                audio: data.audio
-            });
-
-        } catch (err) {
-            lastError = err.message || 'Baglanti koptu';
-            console.log(`❌ Proxy Erismedi: ${instance} (${lastError})`);
-            continue;
+        const apiPath = getRapidApiPath(url);
+        if (!apiPath) {
+            return res.status(400).json({ status: 'error', error: { code: 'Hata: Sadece YouTube, TikTok veya Instagram linkleri desteklenir.' } });
         }
-    }
 
-    console.error('🚨 Bütün proxy sunucuları tükendi!');
-    return res.status(500).json({ status: 'error', error: { code: 'Hata: Proxy Sistemleri Gecici Olarak Mesgul - ' + lastError } });
+        const rapidUrl = `https://${RAPIDAPI_HOST}/${apiPath}`;
+
+        console.log(`➡️ İstek Yönlendiriliyor: ${rapidUrl}`);
+
+        const result = await fetch(rapidUrl, {
+            method: 'GET',
+            headers: {
+                'x-rapidapi-key': RAPIDAPI_KEY,
+                'x-rapidapi-host': RAPIDAPI_HOST
+            }
+        });
+
+        if (!result.ok) {
+            const txt = await result.text();
+            throw new Error(`Cloud API HTTP ${result.status} Hatasi: ${txt}`);
+        }
+
+        const data = await result.json();
+
+        if (data.error || (data.message && data.message.toLowerCase().includes('not exist'))) {
+            throw new Error(data.message || data.error.message || 'Bulut API tarafinca icerik bulunamadi.');
+        }
+
+        if (!data.contents || !data.contents[0]) {
+            throw new Error('Icerik verisi boss veya alinamadi. Dosya gizli veya silinmis olabilir.');
+        }
+
+        const content = data.contents[0];
+        let downloadUrl = null;
+        let audioUrl = null;
+
+        // Smart Extraction Logic (Genisletilmis Link Arayisi)
+        if (content.videos && Array.isArray(content.videos) && content.videos.length > 0) {
+            // İlk gecerli .mp4 veya genel url'yi bul
+            const v = content.videos.find(x => x.url && x.url.includes('.mp4')) || content.videos[0];
+            downloadUrl = v.url || v.downloadUrl;
+        } else if (content.videoUrl) {
+            downloadUrl = content.videoUrl;
+        } else if (content.downloadUrl) {
+            downloadUrl = content.downloadUrl;
+        }
+
+        if (!downloadUrl) {
+            throw new Error('Videoya ait gecerli bir indirme (.mp4) linki API tarafindan saglanamadi.');
+        }
+
+        return res.json({
+            status: 'redirect',
+            url: downloadUrl,
+            audio: audioUrl // Opsiyonel, su an sade video sunuluyor
+        });
+
+    } catch (error) {
+        console.error('Download Error:', error.message);
+        return res.status(500).json({
+            status: 'error',
+            error: { code: 'Hata: ' + error.message }
+        });
+    }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Proxy Router API Porda Çalısıyor: ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`✅ VidGrab Premium RapidAPI Backend is running on port ${PORT}`);
+});
