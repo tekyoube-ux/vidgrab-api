@@ -93,6 +93,11 @@ app.post('/api/download', async (req, res) => {
             throw new Error('Videoya ait gecerli bir indirme (.mp4) linki API tarafindan saglanamadi.');
         }
 
+        if (apiPath.includes('youtube/v3') || url.includes('youtube.com') || url.includes('youtu.be')) {
+            const hostUrl = req.protocol + '://' + req.get('host');
+            downloadUrl = `${hostUrl}/api/stream?url=${encodeURIComponent(downloadUrl)}`;
+        }
+
         return res.json({
             status: 'redirect',
             url: downloadUrl,
@@ -105,6 +110,33 @@ app.post('/api/download', async (req, res) => {
             status: 'error',
             error: { code: 'Hata: ' + error.message }
         });
+    }
+});
+
+app.get('/api/stream', async (req, res) => {
+    const videoUrl = req.query.url;
+    if (!videoUrl) return res.status(400).send('No URL provided');
+
+    try {
+        const response = await fetch(videoUrl);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        response.headers.forEach((value, name) => {
+            res.setHeader(name, value);
+        });
+
+        res.setHeader('Content-Disposition', 'attachment; filename="vidgrab_video.mp4"');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+
+        if (response.body.pipe) {
+            response.body.pipe(res);
+        } else {
+            const { Readable } = require('stream');
+            Readable.fromWeb(response.body).pipe(res);
+        }
+    } catch (e) {
+        console.error('Stream Proxy Hatasi:', e.message);
+        res.status(500).send('Stream Proxy Hatasi: ' + e.message);
     }
 });
 
