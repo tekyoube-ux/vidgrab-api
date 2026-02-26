@@ -88,7 +88,8 @@ app.post('/api/download', async (req, res) => {
         }
 
         // Force proxy override for direct download (Especially for iOS Safari)
-        const hostUrl = req.protocol + '://' + req.get('host');
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+        const hostUrl = protocol + '://' + req.get('host');
         downloadUrl = `${hostUrl}/api/stream?url=${encodeURIComponent(downloadUrl)}`;
 
         return res.json({
