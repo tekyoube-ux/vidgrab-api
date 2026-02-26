@@ -22,12 +22,6 @@ function getRapidApiPath(url) {
         const shortcode = match ? match[1] : null;
         if (!shortcode) return null;
         return `instagram/v3/media/post/details?shortcode=${shortcode}`;
-    } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
-        let videoId = '';
-        if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1].split('?')[0];
-        else if (url.includes('v=')) videoId = url.split('v=')[1].split('&')[0];
-        if (!videoId) return null;
-        return `youtube/v3/video/details?videoId=${videoId}&urlAccess=proxied`;
     }
     return null; // Desteklenmeyen platform
 }
@@ -44,7 +38,7 @@ app.post('/api/download', async (req, res) => {
 
         const apiPath = getRapidApiPath(url);
         if (!apiPath) {
-            return res.status(400).json({ status: 'error', error: { code: 'Hata: Sadece YouTube, TikTok veya Instagram linkleri desteklenir.' } });
+            return res.status(400).json({ status: 'error', error: { code: 'Hata: Sadece TikTok veya Instagram linkleri desteklenir.' } });
         }
 
         const rapidUrl = `https://${RAPIDAPI_HOST}/${apiPath}`;
@@ -93,11 +87,7 @@ app.post('/api/download', async (req, res) => {
             throw new Error('Videoya ait gecerli bir indirme (.mp4) linki API tarafindan saglanamadi.');
         }
 
-        if (apiPath.includes('youtube/v3') || url.includes('youtube.com') || url.includes('youtu.be')) {
-            const hostUrl = req.protocol + '://' + req.get('host');
-            downloadUrl = `${hostUrl}/api/stream?url=${encodeURIComponent(downloadUrl)}`;
-        }
-
+        // Remove YouTube proxy override
         return res.json({
             status: 'redirect',
             url: downloadUrl,
@@ -113,45 +103,7 @@ app.post('/api/download', async (req, res) => {
     }
 });
 
-app.get('/api/stream', async (req, res) => {
-    const videoUrl = req.query.url;
-    if (!videoUrl) return res.status(400).send('No URL provided');
-
-    try {
-        const https = require('https');
-
-        https.get(videoUrl, (streamRes) => {
-            if (streamRes.statusCode >= 400) {
-                return res.status(streamRes.statusCode).send(`Proxy Error: ${streamRes.statusCode}`);
-            }
-
-            const allowedHeaders = ['content-type', 'content-length', 'accept-ranges', 'x-content-length'];
-            for (const name in streamRes.headers) {
-                if (allowedHeaders.includes(name.toLowerCase())) {
-                    res.setHeader(name.toLowerCase() === 'x-content-length' ? 'content-length' : name, streamRes.headers[name]);
-                }
-            }
-
-            res.setHeader('Content-Disposition', 'attachment; filename="vidgrab_video.mp4"');
-            res.setHeader('Access-Control-Allow-Origin', '*');
-
-            streamRes.pipe(res);
-
-            streamRes.on('error', (err) => {
-                console.error('Stream Pipe Error:', err);
-                res.end();
-            });
-        }).on('error', (err) => {
-            console.error('HTTPS Proxy Network Error:', err.message);
-            res.status(500).send('Network Error: ' + err.message);
-        });
-
-    } catch (e) {
-        console.error('Stream Setup Error:', e.message);
-        res.status(500).send('Stream Setup Error: ' + e.message);
-    }
-});
-
+// Stream endpoint removed
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`✅ VidGrab Premium RapidAPI Backend is running on port ${PORT}`);
