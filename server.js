@@ -87,7 +87,10 @@ app.post('/api/download', async (req, res) => {
             throw new Error('Videoya ait gecerli bir indirme (.mp4) linki API tarafindan saglanamadi.');
         }
 
-        // Remove YouTube proxy override
+        // Force proxy override for direct download (Especially for iOS Safari)
+        const hostUrl = req.protocol + '://' + req.get('host');
+        downloadUrl = `${hostUrl}/api/stream?url=${encodeURIComponent(downloadUrl)}`;
+
         return res.json({
             status: 'redirect',
             url: downloadUrl,
@@ -103,7 +106,47 @@ app.post('/api/download', async (req, res) => {
     }
 });
 
-// Stream endpoint removed
+// Proxy Stream Endpoint - Forces direct download on mobile devices (iOS/Safari)
+app.get('/api/stream', async (req, res) => {
+    const videoUrl = req.query.url;
+    if (!videoUrl) return res.status(400).send('No URL provided');
+
+    try {
+        const https = require('https');
+
+        // Some CDNs require specific user agents or headers, but basic get is usually fine
+        https.get(videoUrl, (streamRes) => {
+            if (streamRes.statusCode >= 400) {
+                return res.status(streamRes.statusCode).send(`Proxy Error: ${streamRes.statusCode}`);
+            }
+
+            const allowedHeaders = ['content-type', 'content-length', 'accept-ranges', 'x-content-length'];
+            for (const name in streamRes.headers) {
+                if (allowedHeaders.includes(name.toLowerCase())) {
+                    res.setHeader(name.toLowerCase() === 'x-content-length' ? 'content-length' : name, streamRes.headers[name]);
+                }
+            }
+
+            // CRITICAL: Force the browser to download instead of play
+            res.setHeader('Content-Disposition', 'attachment; filename="mindir_video.mp4"');
+            res.setHeader('Access-Control-Allow-Origin', '*');
+
+            streamRes.pipe(res);
+
+            streamRes.on('error', (err) => {
+                console.error('Stream Pipe Error:', err);
+                res.end();
+            });
+        }).on('error', (err) => {
+            console.error('HTTPS Proxy Network Error:', err.message);
+            res.status(500).send('Network Error: ' + err.message);
+        });
+
+    } catch (e) {
+        console.error('Stream Setup Error:', e.message);
+        res.status(500).send('Stream Setup Error: ' + e.message);
+    }
+});
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`✅ VidGrab Premium RapidAPI Backend is running on port ${PORT}`);
